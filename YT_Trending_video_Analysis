@@ -1,0 +1,103 @@
+# Importing libraries
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from wordcloud import WordCloud
+from collections import Counter
+import re
+
+# warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+# Loading dataset
+df = pd.read_csv("USvideos.csv")
+
+# Visualization settings
+
+PLOT_COLORS = ["Blue","Blue","Orange","Yellow","Dark Green"]
+
+pd.options.display.float_format = '{:.2f}'.format
+sns.set(style="ticks")
+plt.rc('figure', figsize=(8, 5), dpi=100)
+plt.rc('axes', labelpad=20, facecolor="White", linewidth=0.4, grid=True, labelsize=14)
+plt.rc('patch', linewidth=0)
+plt.rc('xtick.major', width=0.2)
+plt.rc('ytick.major', width=0.2)
+plt.rc('grid', color='Grey', linewidth=0.4)
+plt.rc('font', family='Arial', weight='400', size=10)
+plt.rc('text', color='Grey')
+plt.rc('savefig', pad_inches=0.3, dpi=300)
+
+# Filling missing description values
+df["description"] = df["description"].fillna(value="")
+
+# Checking missing data
+print("Missing values per column:")
+print(df.isnull().sum())
+
+# Funtion: To check if title contain all-uppercase words or not
+def contains_capitalized_word(s):
+    return any(w.isupper() for w in s.split())
+
+df["contains_capitalized"] = df["title"].apply(contains_capitalized_word)
+
+# Making Pie chart
+value_counts = df["contains_capitalized"].value_counts()
+fig, ax = plt.subplots()
+ax.pie(value_counts, labels=['No', 'Yes'], colors=['Teal', 'Amber'],
+       textprops={'color': 'Dark Brown'}, startangle=45, autopct='%1.1f%%')
+ax.axis('equal')
+ax.set_title('Title Contains Capitalized Word?')
+plt.show()
+
+# Calculating length of title
+df["title_length"] = df["title"].apply(len)
+
+# Making Histogram
+fig, ax = plt.subplots()
+sns.histplot(df["title_length"], bins=30, color=PLOT_COLORS[4], ax=ax)
+ax.set(xlabel="Title Length", ylabel="Number of Videos", xticks=range(0, 110, 10))
+plt.title("Distribution of Title Lengths")
+plt.show()
+
+# Scatter plot: Title length vs. views (log scale for views)
+fig, ax = plt.subplots()
+ax.scatter(df['views'], df['title_length'], color=PLOT_COLORS[2],
+           edgecolors="#000000", linewidths=0.5, alpha=0.5)
+ax.set(xscale="log", xlabel="Views (log scale)", ylabel="Title Length")
+plt.title("Views vs. Title Length")
+plt.show()
+
+# Heatmap: Correlation between numeric features
+h_labels = [x.replace('_', ' ').title() for x in df.select_dtypes(include=['number', 'bool']).columns]
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.heatmap(df.corr(), annot=True, fmt=".2f", xticklabels=h_labels,
+            yticklabels=h_labels, cmap=sns.cubehelix_palette(as_cmap=True), ax=ax)
+plt.title("Correlation Matrix of Features")
+plt.show()
+
+# Word Cloud: Most common words in titles
+cleaned_titles = df["title"].apply(lambda x: " ".join(re.findall(r'\b\w+\b', x.lower())))
+wordcloud_input = " ".join(cleaned_titles)
+wc = WordCloud(width=1200, height=500, collocations=False,
+               background_color="white", colormap="tab20b").generate(wordcloud_input)
+plt.figure(figsize=(15, 10))
+plt.imshow(wc, interpolation='bilinear')
+plt.axis("off")
+plt.title("Word Cloud of Video Titles", fontsize=16)
+plt.show()
+
+# Bar Plot: Top 10 most frequent words in titles
+word_list = wordcloud_input.split()
+word_freq = Counter(word_list)
+top_words = word_freq.most_common(10)
+words, counts = zip(*top_words)
+plt.figure(figsize=(10, 5))
+sns.barplot(x=list(words), y=list(counts), palette="viridis")
+plt.title("Top 10 Most Common Words in Titles")
+plt.ylabel("Frequency")
+plt.xlabel("Word")
+plt.show()
