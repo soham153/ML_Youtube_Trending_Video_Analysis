@@ -1,6 +1,3 @@
 # ML_Youtube_Trending_Video_Analysis
 
-
-* Used dataset from kagel
-* Happy learning
-* 
+Analysizing the trending videos on youtube and ploting them.
